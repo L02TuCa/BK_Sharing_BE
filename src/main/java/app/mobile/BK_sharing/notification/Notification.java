@@ -1,7 +1,7 @@
-package app.mobile.BK_sharing.notification.entity;
+package app.mobile.BK_sharing.notification;
 
 import app.mobile.BK_sharing.document.entity.Document;
-import app.mobile.BK_sharing.user.entity.User;
+import app.mobile.BK_sharing.user.User;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;

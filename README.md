@@ -47,7 +47,7 @@ cd MobileApp-L02-251/BK_sharing_backend
 ### 2️⃣ Build the Project (Maven)
 
 ```bash
-mvn clean package
+mvn clean package -DskipTests
 ```
 
 This will:
@@ -103,6 +103,8 @@ If you already have MySQL running locally:
 
 ```bash
 # Build Docker image
+mvn compile
+
 docker build -t bk-sharing-app .
 
 # Run app container

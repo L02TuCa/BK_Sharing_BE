@@ -1,0 +1,49 @@
+# fly.toml app configuration file generated for bk-sharing-app-broken-bush-9615 on 2026-01-01T03:44:21+07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'bk-sharing-app-broken-bush-9615'
+primary_region = 'sin'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  SPRING_DATASOURCE_URL = 'jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres?user=postgres.mdygwitoqcbfhxohuazt&password=@Lol0919442401&sslmode=require&currentSchema=bk_sharing'
+  SPRING_DEVTOOLS_RESTART_ENABLED = 'false'
+  SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
+  SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA = 'bk_sharing'
+
+[processes]
+  app = 'java -Xmx512m -jar app.jar'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8080
+  processes = ['app']
+
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+  [services.concurrency]
+    type = 'connections'
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.tcp_checks]]
+    interval = '15s'
+    timeout = '2s'
+    grace_period = '1s'
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024

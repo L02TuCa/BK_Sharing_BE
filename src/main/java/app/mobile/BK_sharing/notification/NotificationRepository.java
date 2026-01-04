@@ -1,6 +1,5 @@
-package app.mobile.BK_sharing.notification.repository;
+package app.mobile.BK_sharing.notification;
 
-import app.mobile.BK_sharing.notification.entity.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

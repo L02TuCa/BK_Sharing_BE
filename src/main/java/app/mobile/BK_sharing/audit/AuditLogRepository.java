@@ -1,6 +1,5 @@
-package app.mobile.BK_sharing.audit.repository;
+package app.mobile.BK_sharing.audit;
 
-import app.mobile.BK_sharing.audit.entity.AuditLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
