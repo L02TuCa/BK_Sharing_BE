@@ -65,7 +65,9 @@ public interface UserService {
     UserStatistics getStatistics();
 
     // Update user profile picture
-    UserDto updateProfilePicture(Long userId, String profilePictureUrl);
+    User updateProfilePicture(Long userId, String profilePictureUrl);
+
+    void deleteProfilePicture(Long userId);
 
     // Change user password
     UserDto changePassword(Long userId, String newPassword);
