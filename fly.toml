@@ -14,6 +14,8 @@ primary_region = 'sin'
   SPRING_DEVTOOLS_RESTART_ENABLED = 'false'
   SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
   SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA = 'bk_sharing'
+  SERVER_ADDRESS = "0.0.0.0"
+  SERVER_PORT = "8080"
 
 [processes]
   app = 'java -Xmx512m -jar app.jar'
@@ -40,7 +42,7 @@ primary_region = 'sin'
   [[services.tcp_checks]]
     interval = '15s'
     timeout = '2s'
-    grace_period = '1s'
+    grace_period = '30s'
 
 [[vm]]
   memory = '1gb'
