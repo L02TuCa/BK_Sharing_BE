@@ -8,9 +8,17 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface DocumentAccessRepository extends JpaRepository<DocumentAccess, Long> {
-    List<DocumentAccess> findByDocumentDocumentId(Long documentId);
-    List<DocumentAccess> findByUserUserId(Long userId);
-    Optional<DocumentAccess> findByDocumentDocumentIdAndUserUserId(Long documentId, Long userId);
-    boolean existsByDocumentDocumentIdAndUserUserId(Long documentId, Long userId);
+public interface DocumentAccessRepository extends JpaRepository<DocumentAccess, Integer> {
+
+    List<DocumentAccess> findByDocumentDocumentId(Integer documentId);
+
+    List<DocumentAccess> findByUserUserId(Integer userId);
+
+    Optional<DocumentAccess> findByDocumentDocumentIdAndUserUserId(Integer documentId, Integer userId);
+
+    boolean existsByDocumentDocumentIdAndUserUserId(Integer documentId, Integer userId);
+
+    List<DocumentAccess> findByGrantedByUserId(Integer userId);
+
+    void deleteByDocumentDocumentIdAndUserUserId(Integer documentId, Integer userId);
 }

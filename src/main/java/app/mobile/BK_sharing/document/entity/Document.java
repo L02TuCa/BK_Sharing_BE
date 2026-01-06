@@ -1,60 +1,91 @@
 package app.mobile.BK_sharing.document.entity;
 
-import app.mobile.BK_sharing.category.entity.Category;
-import app.mobile.BK_sharing.user.entity.User;
+import app.mobile.BK_sharing.category.Category;
+import app.mobile.BK_sharing.user.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Document")
+@Table(name = "document")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Document {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "document_id")
     private Long documentId;
 
-    @Column(nullable = false, length = 255)
+    @Column(name = "title", nullable = false, length = 255)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "file_type", nullable = false, length = 20)
     private FileType fileType;
 
-    @Column(nullable = false, length = 500)
+    @Column(name = "file_path", nullable = false, length = 500)
     private String filePath;
 
-    @Column(nullable = false)
+    @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoryId")
+    @JoinColumn(name = "category_id", referencedColumnName = "category_id")
     private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploadedBy", nullable = false)
+    @JoinColumn(name = "uploaded_by", referencedColumnName = "user_id", nullable = false)
     private User uploadedBy;
 
-    @Column(nullable = false)
+    @Column(name = "is_approved", nullable = false)
     private Boolean isApproved = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "approvedBy")
+    @JoinColumn(name = "approved_by", referencedColumnName = "user_id")
     private User approvedBy;
 
     @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    // Enum for file type
     public enum FileType {
-        PDF, WORD, POWERPOINT
+        PDF("PDF"),
+        Word("Word"),
+        PowerPoint("PowerPoint");
+
+        private final String value;
+
+        FileType(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public static FileType fromString(String value) {
+            for (FileType type : FileType.values()) {
+                if (type.value.equalsIgnoreCase(value)) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Invalid file type: " + value);
+        }
     }
 }

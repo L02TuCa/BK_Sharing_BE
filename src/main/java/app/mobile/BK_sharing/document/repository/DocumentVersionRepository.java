@@ -5,11 +5,17 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
-public interface DocumentVersionRepository extends JpaRepository<DocumentVersion, Long> {
-    List<DocumentVersion> findByDocumentDocumentId(Long documentId);
-    Optional<DocumentVersion> findByDocumentDocumentIdAndVersionNumber(Long documentId, Integer versionNumber);
-    List<DocumentVersion> findByEditedByUserId(Long userId);
+public interface DocumentVersionRepository extends JpaRepository<DocumentVersion, Integer> {
+
+    List<DocumentVersion> findByDocumentDocumentId(Integer documentId);
+
+    DocumentVersion findByDocumentDocumentIdAndVersionNumber(Integer documentId, Integer versionNumber);
+
+    Integer countByDocumentDocumentId(Integer documentId);
+
+    DocumentVersion findTopByDocumentDocumentIdOrderByVersionNumberDesc(Integer documentId);
+
+    List<DocumentVersion> findByEditedByUserId(Integer userId);
 }
