@@ -30,7 +30,7 @@ public class DocumentInteraction {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "interaction_type", nullable = false, columnDefinition = "ENUM('View', 'Download')")
+    @Column(name = "interaction_type", nullable = false)
     private InteractionType interactionType;
 
     @CreationTimestamp
