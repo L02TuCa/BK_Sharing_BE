@@ -1,8 +1,6 @@
 package app.mobile.BK_sharing.notification;
 
-import app.mobile.BK_sharing.notification.NotificationService.NotificationStats;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import app.mobile.BK_sharing.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -119,7 +117,6 @@ public class NotificationController {
      * Delete a specific notification
      */
     @DeleteMapping("/{notificationId}")
-    @Operation(summary = "Delete a notification")
     public ResponseEntity<Map<String, Object>> deleteNotification(
             @PathVariable Long notificationId,
             @AuthenticationPrincipal Long userId) {
@@ -140,7 +137,7 @@ public class NotificationController {
 
             return ResponseEntity.ok(response);
 
-        } catch (NotificationService.NotificationNotFoundException e) {
+        } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(createErrorResponse(e.getMessage()));
         }
@@ -150,7 +147,7 @@ public class NotificationController {
      * Delete all notifications for the authenticated user
      */
     @DeleteMapping("/all")
-    @Operation(summary = "Delete all notifications")
+//    @Operation(summary = "Delete all notifications")
     public ResponseEntity<Map<String, Object>> deleteAllNotifications(@AuthenticationPrincipal Long userId) {
         notificationService.deleteAllUserNotifications(userId);
 
