@@ -1,5 +1,6 @@
 package app.mobile.BK_sharing.user;
 
+import app.mobile.BK_sharing.storage.SupabaseStorageService;
 import app.mobile.BK_sharing.user.dto.CreateUserDto;
 import app.mobile.BK_sharing.user.dto.UpdateUserDTO;
 import app.mobile.BK_sharing.user.dto.UserDto;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final SupabaseStorageService storageService;
 
     @Override
     @Transactional
@@ -273,6 +275,48 @@ public class UserServiceImpl implements UserService {
         return UserDto.fromEntity(activatedUser);
     }
 
+
+
+
+
+
+//    Image
+
+    @Transactional
+    public User updateProfilePicture(Long userId, String newImageUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Delete old profile picture if exists
+        if (user.getProfilePicture() != null && !user.getProfilePicture().isEmpty()) {
+            try {
+                storageService.deleteFile(user.getProfilePicture());
+            } catch (Exception e) {
+                log.warn("Failed to delete old profile picture: {}", e.getMessage());
+                // Continue anyway - don't fail the update if deletion fails
+            }
+        }
+
+        user.setProfilePicture(newImageUrl);
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public void deleteProfilePicture(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        if (user.getProfilePicture() != null && !user.getProfilePicture().isEmpty()) {
+            try {
+                storageService.deleteFile(user.getProfilePicture());
+                user.setProfilePicture(null);
+                userRepository.save(user);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to delete profile picture: " + e.getMessage(), e);
+            }
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
     public boolean existsById(Long userId) {
@@ -312,20 +356,20 @@ public class UserServiceImpl implements UserService {
         return stats;
     }
 
-    @Override
-    @Transactional
-    public UserDto updateProfilePicture(Long userId, String profilePictureUrl) {
-        log.info("Updating profile picture for user ID: {}", userId);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-
-        user.setProfilePicture(profilePictureUrl);
-        User updatedUser = userRepository.save(user);
-
-        log.info("Profile picture updated successfully for user ID: {}", userId);
-        return UserDto.fromEntity(updatedUser);
-    }
+//    @Override
+//    @Transactional
+//    public UserDto updateProfilePicture(Long userId, String profilePictureUrl) {
+//        log.info("Updating profile picture for user ID: {}", userId);
+//
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+//
+//        user.setProfilePicture(profilePictureUrl);
+//        User updatedUser = userRepository.save(user);
+//
+//        log.info("Profile picture updated successfully for user ID: {}", userId);
+//        return UserDto.fromEntity(updatedUser);
+//    }
 
     @Override
     @Transactional
