@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface DocumentService {
 
-    DocumentResponseDto uploadDocument(MultipartFile file, String title, String description, Long userId);
+    DocumentResponseDto uploadDocument(MultipartFile file, String title, String description, Long userId, List<Long> categoriesId, Long courseId);
     DocumentResponseDto getDocumentById(Long id);
     List<DocumentResponseDto> getAllDocuments();
     Page<DocumentResponseDto> getAllDocuments(Pageable pageable);

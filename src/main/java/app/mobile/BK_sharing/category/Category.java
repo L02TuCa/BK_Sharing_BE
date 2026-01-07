@@ -39,6 +39,6 @@ public class Category {
      @JoinColumn(name = "created_by", referencedColumnName = "user_id", nullable = false)
      private User createdBy;
 
-    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
-    private List<Document> documents;
+    @ManyToMany(mappedBy = "categories", fetch = FetchType.LAZY)
+    private List<Document> documents = new ArrayList<>();
 }

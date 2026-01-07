@@ -1,5 +1,9 @@
 package app.mobile.BK_sharing.document;
 
+import app.mobile.BK_sharing.category.Category;
+import app.mobile.BK_sharing.category.CategoryRepository;
+import app.mobile.BK_sharing.course.Course;
+import app.mobile.BK_sharing.course.CourseRepository;
 import app.mobile.BK_sharing.document.dto.DocumentResponseDto;
 import app.mobile.BK_sharing.document.entity.Document;
 import app.mobile.BK_sharing.document.repository.DocumentRepository;
@@ -15,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -27,10 +32,19 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentRepository documentRepository;
     private final SupabaseStorageService storageService;
     private final UserRepository userRepository; // To fetch the uploader
+    private final CategoryRepository categoryRepository;
+    private final CourseRepository courseRepository;
 
     @Override
     @Transactional
-    public DocumentResponseDto uploadDocument(MultipartFile file, String title, String description, Long userId) {
+    public DocumentResponseDto uploadDocument(
+            MultipartFile file,
+            String title,
+            String description,
+            Long userId,
+            List<Long> categoryIds,  // Multiple categories
+            Long courseId) {         // Single course
+
         try {
             // 1. Basic validation
             if (file.isEmpty()) {
@@ -40,33 +54,77 @@ public class DocumentServiceImpl implements DocumentService {
             // 2. Upload to Supabase and get PUBLIC URL
             String publicUrl = storageService.uploadFile(file);
 
+            // 3. Create Document entity
             Document doc = new Document();
             doc.setTitle(title);
             doc.setDescription(description);
             doc.setFilePath(publicUrl);
             doc.setFileSize(file.getSize());
 
-            // Fix: Don't redeclare 'extension' variable
+            // 4. Set file type
             String originalFilename = file.getOriginalFilename();
             assert originalFilename != null;
             String fileExtension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
 
             switch (fileExtension) {
                 case "pdf" -> doc.setFileType(Document.FileType.PDF);
-                case "docx", "doc" -> doc.setFileType(Document.FileType.Word);
-                case "pptx", "ppt" -> doc.setFileType(Document.FileType.PowerPoint);
-                default -> doc.setFileType(Document.FileType.PDF); // Default
+                case "docx", "doc" -> doc.setFileType(Document.FileType.WORD);
+                case "pptx", "ppt" -> doc.setFileType(Document.FileType.POWERPOINT);
+//                case "xlsx", "xls" -> doc.setFileType(Document.FileType.EXCEL);
+//                case "txt" -> doc.setFileType(Document.FileType.TEXT);
+//                case "jpg", "jpeg", "png", "gif" -> doc.setFileType(Document.FileType.IMAGE);
+                default -> doc.setFileType(Document.FileType.OTHER);
             }
 
-            // Set uploader (make sure user exists)
+            // 5. Set uploader
             User uploader = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
             doc.setUploadedBy(uploader);
 
-            // 5. Save to database
+            // 6. Initialize collections
+            doc.setCategories(new ArrayList<>());
+
+            // 7. Save document first (to get ID)
             documentRepository.save(doc);
 
-            return new DocumentResponseDto(doc);
+            // 8. Handle categories (ManyToMany)
+            if (categoryIds != null && !categoryIds.isEmpty()) {
+                List<Category> categories = categoryRepository.findAllById(categoryIds);
+
+                // Validate all categories exist
+                if (categories.size() != categoryIds.size()) {
+                    throw new RuntimeException("One or more categories not found");
+                }
+
+                // Add categories to document
+                doc.getCategories().addAll(categories);
+
+                // Update reverse side if needed (optional, depends on cascade)
+                categories.forEach(category -> {
+                    if (category.getDocuments() == null) {
+                        category.setDocuments(new ArrayList<>());
+                    }
+                    category.getDocuments().add(doc);
+                });
+            }
+
+            // 9. Handle course (ManyToOne)
+            if (courseId != null) {
+                Course course = courseRepository.findById(courseId)
+                        .orElseThrow(() -> new RuntimeException("Course not found with ID: " + courseId));
+                doc.setCourse(course);
+
+                // Add to reverse side if needed
+                if (course.getDocuments() == null) {
+                    course.setDocuments(new ArrayList<>());
+                }
+                course.getDocuments().add(doc);
+            }
+
+            // 10. Save with associations
+            Document savedDocument = documentRepository.save(doc);
+
+            return new DocumentResponseDto(savedDocument);
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to upload file: " + e.getMessage(), e);
@@ -198,8 +256,8 @@ public class DocumentServiceImpl implements DocumentService {
 
         String extension = filename.toLowerCase();
         if (extension.endsWith(".pdf")) return Document.FileType.PDF;
-        if (extension.endsWith(".docx") || extension.endsWith(".doc")) return Document.FileType.Word;
-        if (extension.endsWith(".pptx") || extension.endsWith(".ppt")) return Document.FileType.PowerPoint;
+        if (extension.endsWith(".docx") || extension.endsWith(".doc")) return Document.FileType.WORD;
+        if (extension.endsWith(".pptx") || extension.endsWith(".ppt")) return Document.FileType.POWERPOINT;
 
         return Document.FileType.PDF; // Default
     }

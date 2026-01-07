@@ -60,7 +60,7 @@ public class UserServiceImpl implements UserService {
                 .password(createUserDTO.getPassword()) // In production, encrypt this!
                 .fullName(createUserDTO.getFullName())
                 .role(role)
-                .profilePicture(createUserDTO.getProfilePicture())
+                .profilePicture(createUserDTO.getProfilePicture() != null ? createUserDTO.getProfilePicture() :"https://mdygwitoqcbfhxohuazt.supabase.co/storage/v1/object/public/bk-docs/522a7d6b-23c2-4382-97ad-220cdeb11ae9.jpg")
                 .isActive(createUserDTO.getIsActive() != null ? createUserDTO.getIsActive() : true)
         .build();
         

@@ -1,6 +1,7 @@
 package app.mobile.BK_sharing.document;
 
 import app.mobile.BK_sharing.document.dto.DocumentResponseDto;
+import app.mobile.BK_sharing.document.dto.DocumentUploadRequest;
 import app.mobile.BK_sharing.document.entity.Document;
 import app.mobile.BK_sharing.document.repository.DocumentRepository;
 import app.mobile.BK_sharing.dto.ApiResponse;
@@ -26,12 +27,16 @@ public class DocumentController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<DocumentResponseDto>> uploadDocument(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam String title,
-            @RequestParam(required = false) String description,
-            @RequestParam Long userId) {
+            @ModelAttribute DocumentUploadRequest request) {
 
-        DocumentResponseDto doc = documentService.uploadDocument(file, title, description, userId);
+        DocumentResponseDto doc = documentService.uploadDocument(
+                request.getFile(),
+                request.getTitle(),
+                request.getDescription(),
+                request.getUserId(),
+                request.getCategoryIds(),
+                request.getCourseId()
+        );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Document uploaded successfully", doc));
     }

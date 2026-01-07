@@ -1,22 +1,27 @@
 package app.mobile.BK_sharing.document.entity;
 
 import app.mobile.BK_sharing.category.Category;
+import app.mobile.BK_sharing.course.Course;
 import app.mobile.BK_sharing.user.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "document")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Document {
 
     @Id
@@ -40,9 +45,17 @@ public class Document {
     @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "document_categories",  // Join table name
+            joinColumns = @JoinColumn(name = "document_id"),  // This entity's key
+            inverseJoinColumns = @JoinColumn(name = "category_id")  // Other entity's key
+    )
+    private List<Category> categories = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", referencedColumnName = "category_id")
-    private Category category;
+    @JoinColumn(name = "course_id")  // Foreign key in Employee table
+    private Course course;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploaded_by", referencedColumnName = "user_id", nullable = false)
@@ -66,8 +79,9 @@ public class Document {
     // Enum for file type
     public enum FileType {
         PDF("PDF"),
-        Word("Word"),
-        PowerPoint("PowerPoint");
+        WORD("WORD"),
+        POWERPOINT("POWERPOINT"),
+        OTHER("OTHER");
 
         private final String value;
 
