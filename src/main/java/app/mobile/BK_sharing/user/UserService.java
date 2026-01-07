@@ -1,6 +1,7 @@
 package app.mobile.BK_sharing.user;
 
 import app.mobile.BK_sharing.user.dto.CreateUserDto;
+import app.mobile.BK_sharing.user.dto.LoginDto;
 import app.mobile.BK_sharing.user.dto.UpdateUserDTO;
 import app.mobile.BK_sharing.user.dto.UserDto;
 import org.springframework.data.domain.Page;
@@ -12,6 +13,8 @@ public interface UserService {
 
     // Create a new user
     UserDto createUser(CreateUserDto createUserDTO);
+
+    UserDto loginUser(LoginDto loginDto);
 
     // Get all users
     List<UserDto> getAllUsers();
@@ -62,7 +65,7 @@ public interface UserService {
     boolean existsByUsername(String username);
 
     // Get user statistics
-    UserStatistics getStatistics();
+//    UserStatistics getStatistics();
 
     // Update user profile picture
     User updateProfilePicture(Long userId, String profilePictureUrl);
@@ -72,28 +75,28 @@ public interface UserService {
     // Change user password
     UserDto changePassword(Long userId, String newPassword);
 
-    // User statistics DTO
-    class UserStatistics {
-        private Long totalUsers;
-        private Long adminCount;
-        private Long studentCount;
-        private Long activeUsers;
-        private Long inactiveUsers;
-
-        // Getters and setters
-        public Long getTotalUsers() { return totalUsers; }
-        public void setTotalUsers(Long totalUsers) { this.totalUsers = totalUsers; }
-
-        public Long getAdminCount() { return adminCount; }
-        public void setAdminCount(Long adminCount) { this.adminCount = adminCount; }
-
-        public Long getStudentCount() { return studentCount; }
-        public void setStudentCount(Long studentCount) { this.studentCount = studentCount; }
-
-        public Long getActiveUsers() { return activeUsers; }
-        public void setActiveUsers(Long activeUsers) { this.activeUsers = activeUsers; }
-
-        public Long getInactiveUsers() { return inactiveUsers; }
-        public void setInactiveUsers(Long inactiveUsers) { this.inactiveUsers = inactiveUsers; }
-    }
+//    // User statistics DTO
+//    class UserStatistics {
+//        private Long totalUsers;
+//        private Long adminCount;
+//        private Long studentCount;
+//        private Long activeUsers;
+//        private Long inactiveUsers;
+//
+//        // Getters and setters
+//        public Long getTotalUsers() { return totalUsers; }
+//        public void setTotalUsers(Long totalUsers) { this.totalUsers = totalUsers; }
+//
+//        public Long getAdminCount() { return adminCount; }
+//        public void setAdminCount(Long adminCount) { this.adminCount = adminCount; }
+//
+//        public Long getStudentCount() { return studentCount; }
+//        public void setStudentCount(Long studentCount) { this.studentCount = studentCount; }
+//
+//        public Long getActiveUsers() { return activeUsers; }
+//        public void setActiveUsers(Long activeUsers) { this.activeUsers = activeUsers; }
+//
+//        public Long getInactiveUsers() { return inactiveUsers; }
+//        public void setInactiveUsers(Long inactiveUsers) { this.inactiveUsers = inactiveUsers; }
+//    }
 }

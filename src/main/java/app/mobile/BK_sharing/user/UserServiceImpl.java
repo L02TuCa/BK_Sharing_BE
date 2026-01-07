@@ -2,6 +2,7 @@ package app.mobile.BK_sharing.user;
 
 import app.mobile.BK_sharing.storage.SupabaseStorageService;
 import app.mobile.BK_sharing.user.dto.CreateUserDto;
+import app.mobile.BK_sharing.user.dto.LoginDto;
 import app.mobile.BK_sharing.user.dto.UpdateUserDTO;
 import app.mobile.BK_sharing.user.dto.UserDto;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,6 +70,23 @@ public class UserServiceImpl implements UserService {
 
         return UserDto.fromEntity(savedUser);
     }
+
+    @Override
+    @Transactional
+    public UserDto loginUser(LoginDto loginDto){
+        log.info("Login user by email: {}", loginDto.getEmail());
+        User user = userRepository.findByEmail(loginDto.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + loginDto.getEmail()));
+
+        if (!Objects.equals(loginDto.getPassword(), user.getPassword())) {
+            log.warn("Invalid password attempt for email: {}", loginDto.getEmail());
+            throw new RuntimeException("Invalid password");
+        }
+
+        log.info("User logged in successfully: {}", loginDto.getEmail());
+        return UserDto.fromEntity(user);
+    }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -335,26 +354,26 @@ public class UserServiceImpl implements UserService {
         return userRepository.existsByUsername(username);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public UserStatistics getStatistics() {
-        log.info("Getting user statistics");
-
-        UserStatistics stats = new UserStatistics();
-
-        Long totalUsers = userRepository.count();
-        Long adminCount = userRepository.countByRole(User.UserRole.ADMIN);
-        Long studentCount = userRepository.countByRole(User.UserRole.STUDENT);
-        Long activeUsers = userRepository.countActiveUsers();
-
-        stats.setTotalUsers(totalUsers);
-        stats.setAdminCount(adminCount);
-        stats.setStudentCount(studentCount);
-        stats.setActiveUsers(activeUsers);
-        stats.setInactiveUsers(totalUsers - activeUsers);
-
-        return stats;
-    }
+//    @Override
+//    @Transactional(readOnly = true)
+//    public UserStatistics getStatistics() {
+//        log.info("Getting user statistics");
+//
+//        UserStatistics stats = new UserStatistics();
+//
+//        Long totalUsers = userRepository.count();
+//        Long adminCount = userRepository.countByRole(User.UserRole.ADMIN);
+//        Long studentCount = userRepository.countByRole(User.UserRole.STUDENT);
+//        Long activeUsers = userRepository.countActiveUsers();
+//
+//        stats.setTotalUsers(totalUsers);
+//        stats.setAdminCount(adminCount);
+//        stats.setStudentCount(studentCount);
+//        stats.setActiveUsers(activeUsers);
+//        stats.setInactiveUsers(totalUsers - activeUsers);
+//
+//        return stats;
+//    }
 
 //    @Override
 //    @Transactional

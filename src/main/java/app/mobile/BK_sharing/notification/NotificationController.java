@@ -22,9 +22,9 @@ public class NotificationController {
     /**
      * Get all notifications for the authenticated user
      */
-    @GetMapping
+    @GetMapping("/{userId}")
 //    @Operation(summary = "Get all notifications for user")
-    public ResponseEntity<Map<String, Object>> getUserNotifications(@AuthenticationPrincipal Long userId) {
+    public ResponseEntity<Map<String, Object>> getUserNotifications(@PathVariable Long userId) {
         List<Notification> notifications = notificationService.getUserNotifications(userId);
 
         Map<String, Object> response = new HashMap<>();
@@ -116,10 +116,10 @@ public class NotificationController {
     /**
      * Delete a specific notification
      */
-    @DeleteMapping("/{notificationId}")
+    @DeleteMapping("/{userId}/{notificationId}")
     public ResponseEntity<Map<String, Object>> deleteNotification(
             @PathVariable Long notificationId,
-            @AuthenticationPrincipal Long userId) {
+            @PathVariable Long userId) {
 
         try {
             // Verify the notification belongs to the user
@@ -146,7 +146,7 @@ public class NotificationController {
     /**
      * Delete all notifications for the authenticated user
      */
-    @DeleteMapping("/all")
+    @DeleteMapping("/{userId}/all")
 //    @Operation(summary = "Delete all notifications")
     public ResponseEntity<Map<String, Object>> deleteAllNotifications(@AuthenticationPrincipal Long userId) {
         notificationService.deleteAllUserNotifications(userId);

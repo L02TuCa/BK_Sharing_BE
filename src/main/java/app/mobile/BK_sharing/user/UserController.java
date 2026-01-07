@@ -29,10 +29,37 @@ public class UserController {
 
         UserDto createdUser = userService.createUser(request);
 
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("User created successfully", createdUser));
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<ApiResponse<UserDto>> signUp(
+            @Valid @RequestBody CreateUserDto request) {
+        log.info("Sign up new user with username: {}", request.getUsername());
+
+        UserDto createdUser = userService.createUser(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success("User created successfully", createdUser));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<UserDto>> LogIn(
+            @Valid @RequestBody LoginDto request) {
+        log.info("Log in user with email: {}", request.getEmail());
+
+        UserDto loginUser = userService.loginUser(request);
+
+        return ResponseEntity.ok(ApiResponse.success("User login successfully", loginUser));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout() {
+        // Add logout logic (clear sessions/tokens)
+        return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
 
     @GetMapping("/{userId}")
@@ -66,6 +93,8 @@ public class UserController {
 
         return ResponseEntity.ok(ApiResponse.success("User updated successfully", updatedUser));
     }
+
+
 
 
 //
