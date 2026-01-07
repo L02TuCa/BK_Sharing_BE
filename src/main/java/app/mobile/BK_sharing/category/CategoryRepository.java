@@ -32,15 +32,17 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     List<Category> findByCreatedByUserId(Long userId);
 
     // Get categories with document count (custom query)
-    @Query("SELECT c, COUNT(d) as documentCount FROM Category c " +
-            "LEFT JOIN Document d ON c.categoryId = d.category.categoryId " +
-            "GROUP BY c.categoryId")
+    @Query("SELECT c, COUNT(d) as documentCount " +
+            "FROM Category c " +
+            "LEFT JOIN c.documents d " +  // Join through the relationship in Category entity
+            "GROUP BY c.categoryId, c.categoryName, c.description")
     List<Object[]> findAllWithDocumentCount();
 
     // Get category with document count by ID
-    @Query("SELECT c, COUNT(d) as documentCount FROM Category c " +
-            "LEFT JOIN Document d ON c.categoryId = d.category.categoryId " +
+    @Query("SELECT c, COUNT(d) as documentCount " +
+            "FROM Category c " +
+            "LEFT JOIN c.documents d " +
             "WHERE c.categoryId = :categoryId " +
-            "GROUP BY c.categoryId")
-    Optional<Object[]> findByIdWithDocumentCount(@Param("categoryId") Integer categoryId);
+            "GROUP BY c.categoryId, c.categoryName, c.description")
+    Optional<Object[]> findCategoryWithDocumentCountById(@Param("categoryId") Long categoryId);
 }
