@@ -1,6 +1,8 @@
 package app.mobile.BK_sharing.document.repository;
 
+import app.mobile.BK_sharing.category.Category;
 import app.mobile.BK_sharing.document.entity.Document;
+import app.mobile.BK_sharing.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,14 +17,16 @@ import java.util.Optional;
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, Long> {
 
-    // Find documents by title (contains, case-insensitive)
+    // CORRECTED: Find documents by title (contains, case-insensitive)
     List<Document> findByTitleContainingIgnoreCase(String title);
 
-    // Find documents by category
-    List<Document> findByCategoryCategoryId(Long categoryId);
+    // CORRECTED: Find documents by category (using JOIN query)
+    @Query("SELECT DISTINCT d FROM Document d JOIN d.categories c WHERE c.categoryId = :categoryId")
+    List<Document> findByCategoryId(@Param("categoryId") Long categoryId);
 
-    // Find documents by category with pagination
-    Page<Document> findByCategoryCategoryId(Long categoryId, Pageable pageable);
+    // CORRECTED: Find documents by category with pagination
+    @Query("SELECT DISTINCT d FROM Document d JOIN d.categories c WHERE c.categoryId = :categoryId")
+    Page<Document> findByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
 
     // Find documents by uploader
     List<Document> findByUploadedByUserId(Long userId);
@@ -39,8 +43,9 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     // Find documents by uploader and approval status
     List<Document> findByUploadedByUserIdAndIsApproved(Long userId, Boolean isApproved);
 
-    // Find documents by category and approval status
-    List<Document> findByCategoryCategoryIdAndIsApproved(Long categoryId, Boolean isApproved);
+    // CORRECTED: Find documents by category and approval status
+    @Query("SELECT DISTINCT d FROM Document d JOIN d.categories c WHERE c.categoryId = :categoryId AND d.isApproved = :isApproved")
+    List<Document> findByCategoryIdAndIsApproved(@Param("categoryId") Long categoryId, @Param("isApproved") Boolean isApproved);
 
     // Find documents by approver
     List<Document> findByApprovedByUserId(Long userId);
@@ -59,8 +64,9 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     // Search documents by title or description
     List<Document> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String titleKeyword, String descriptionKeyword);
 
-    // Count documents by category
-    Long countByCategoryCategoryId(Long categoryId);
+    // CORRECTED: Count documents by category
+    @Query("SELECT COUNT(DISTINCT d) FROM Document d JOIN d.categories c WHERE c.categoryId = :categoryId")
+    Long countByCategoryId(@Param("categoryId") Long categoryId);
 
     // Count documents by uploader
     Long countByUploadedByUserId(Long userId);
@@ -68,10 +74,12 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     // Count documents by approval status
     Long countByIsApproved(Boolean isApproved);
 
-    // Find documents with pagination and optional filters
-    @Query("SELECT d FROM Document d WHERE " +
+    // CORRECTED: Find documents with pagination and optional filters
+    @Query("SELECT DISTINCT d FROM Document d " +
+            "LEFT JOIN d.categories c " +
+            "WHERE " +
             "(:title IS NULL OR LOWER(d.title) LIKE LOWER(CONCAT('%', :title, '%'))) AND " +
-            "(:categoryId IS NULL OR d.category.categoryId = :categoryId) AND " +
+            "(:categoryId IS NULL OR c.categoryId = :categoryId) AND " +
             "(:uploadedById IS NULL OR d.uploadedBy.userId = :uploadedById) AND " +
             "(:isApproved IS NULL OR d.isApproved = :isApproved) AND " +
             "(:fileType IS NULL OR d.fileType = :fileType)")
@@ -88,9 +96,10 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     @Query("SELECT d FROM Document d ORDER BY d.createdAt DESC")
     List<Document> findRecentDocuments(Pageable pageable);
 
-    // Find documents uploaded by user with category filter
-    @Query("SELECT d FROM Document d WHERE d.uploadedBy.userId = :userId AND " +
-            "(:categoryId IS NULL OR d.category.categoryId = :categoryId)")
+    // CORRECTED: Find documents uploaded by user with category filter
+    @Query("SELECT DISTINCT d FROM Document d JOIN d.categories c " +
+            "WHERE d.uploadedBy.userId = :userId AND " +
+            "(:categoryId IS NULL OR c.categoryId = :categoryId)")
     List<Document> findByUploadedByUserIdAndCategoryId(
             @Param("userId") Long userId,
             @Param("categoryId") Long categoryId
@@ -103,9 +112,9 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
             "FROM Document d WHERE d.uploadedBy.userId = :userId")
     Object[] getDocumentStatisticsByUser(@Param("userId") Long userId);
 
-    // Get document statistics by category
-    @Query("SELECT c.categoryName, COUNT(d) as documentCount " +
-            "FROM Document d RIGHT JOIN d.category c " +
+    // CORRECTED: Get document statistics by category
+    @Query("SELECT c.categoryName, COUNT(DISTINCT d) as documentCount " +
+            "FROM Category c LEFT JOIN c.documents d " +
             "GROUP BY c.categoryId, c.categoryName " +
             "ORDER BY documentCount DESC")
     List<Object[]> getDocumentCountByCategory();
@@ -132,12 +141,27 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     // Find documents by uploader and approval status with pagination
     Page<Document> findByUploadedByUserIdAndIsApproved(Long userId, Boolean isApproved, Pageable pageable);
 
-    // Find documents by category and uploader
-    List<Document> findByCategoryCategoryIdAndUploadedByUserId(Long categoryId, Long userId);
+    // CORRECTED: Find documents by category and uploader
+    @Query("SELECT DISTINCT d FROM Document d JOIN d.categories c " +
+            "WHERE c.categoryId = :categoryId AND d.uploadedBy.userId = :userId")
+    List<Document> findByCategoryIdAndUploadedByUserId(
+            @Param("categoryId") Long categoryId,
+            @Param("userId") Long userId
+    );
 
     // Search by title or description
     @Query("SELECT d FROM Document d WHERE " +
             "LOWER(d.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(d.description) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Document> searchDocuments(@Param("keyword") String keyword);
+
+    // CORRECTED: Find documents by categories (multiple categories)
+    @Query("SELECT DISTINCT d FROM Document d JOIN d.categories c WHERE c.categoryId IN :categoryIds")
+    List<Document> findByCategoryIds(@Param("categoryIds") List<Long> categoryIds);
+
+    // Find documents by course
+    List<Document> findByCourseCourseId(Long courseId);
+
+    // Find documents by course with pagination
+    Page<Document> findByCourseCourseId(Long courseId, Pageable pageable);
 }
