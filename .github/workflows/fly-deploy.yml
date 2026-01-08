@@ -27,10 +27,12 @@ jobs:
 #        run: ./mvnw package -DskipTests
       - name: Set Fly.io secrets (if needed)
         # Only run this when secrets need updating
-        if: true  # Set to true only when rotating secrets
+        if: false  # Set to true only when rotating secrets
         run: |
           flyctl secrets set \
             SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}" \
+            SUPABASE_URL="https://mdygwitoqcbfhxohuazt.supabase.co" \
+            SUPABASE_BUCKET="bk-docs" \
             SPRING_DATASOURCE_URL="${{ secrets.SPRING_DATASOURCE_URL }}" \
             DB_USERNAME="${{ secrets.DB_USERNAME }}" \
             DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
