@@ -104,11 +104,11 @@ public class DocumentController {
         return ResponseEntity.ok(ApiResponse.success("User documents retrieved successfully", documents));
     }
 
-    @GetMapping("/approved")
-    public ResponseEntity<ApiResponse<List<DocumentResponseDto>>> getApprovedDocuments() {
-        List<DocumentResponseDto> documents = documentService.getApprovedDocuments();
-        return ResponseEntity.ok(ApiResponse.success("Approved documents retrieved successfully", documents));
-    }
+//    @GetMapping("/approved")
+//    public ResponseEntity<ApiResponse<List<DocumentResponseDto>>> getApprovedDocuments() {
+//        List<DocumentResponseDto> documents = documentService.getApprovedDocuments();
+//        return ResponseEntity.ok(ApiResponse.success("Approved documents retrieved successfully", documents));
+//    }
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<DocumentResponseDto>>> searchDocuments(
@@ -144,7 +144,7 @@ public class DocumentController {
         return ResponseEntity.ok(ApiResponse.success("Download URL retrieved successfully", document.getFilePath()));
     }
 
-    @GetMapping("/recent")
+    @GetMapping("/user/{userId}/recent")
     public ResponseEntity<ApiResponse<List<DocumentResponseDto>>> getRecentDocuments(
             @RequestParam(defaultValue = "10") int limit) {
 

@@ -10,7 +10,6 @@ primary_region = 'sin'
   dockerfile = 'Dockerfile'
 
 [env]
-  SPRING_DATASOURCE_URL = 'jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres?user=postgres.mdygwitoqcbfhxohuazt&password=@Lol0919442401&sslmode=require&currentSchema=bk_sharing'
   SPRING_DEVTOOLS_RESTART_ENABLED = 'false'
   SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
   SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA = 'bk_sharing'

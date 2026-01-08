@@ -21,8 +21,8 @@ jobs:
           fetch-depth: 0
       - name: Setup Fly CLI
         uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Build application
-        run: ./mvnw package -DskipTests
+#      - name: Build application
+#        run: ./mvnw package -DskipTests
       - name: Set Fly.io secrets (if needed)
         # Only run this when secrets need updating
         if: true  # Set to true only when rotating secrets
