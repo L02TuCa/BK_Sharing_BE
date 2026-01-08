@@ -27,7 +27,7 @@ jobs:
 #        run: ./mvnw package -DskipTests
       - name: Set Fly.io secrets (if needed)
         # Only run this when secrets need updating
-        if: false  # Set to true only when rotating secrets
+        if: true  # Set to true only when rotating secrets
         run: |
           flyctl secrets set \
             SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}" \
