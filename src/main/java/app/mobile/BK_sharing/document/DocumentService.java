@@ -16,9 +16,20 @@ public interface DocumentService {
     DocumentResponseDto getDocumentById(Long id);
     List<DocumentResponseDto> getAllDocuments();
     Page<DocumentResponseDto> getAllDocuments(Pageable pageable);
-    DocumentResponseDto updateDocument(Long id, String title, String description);
-    void deleteDocument(Long id);
     List<DocumentResponseDto> getDocumentsByUser(Long userId);
     DocumentResponseDto approveDocument(Long documentId, Long approvedByUserId);
     DocumentResponseDto rejectDocument(Long documentId);
+
+    DocumentResponseDto updateDocumentMetadata(
+            Long documentId,
+            String title,
+            String description,
+            List<Long> categoryIds,
+            Long courseId);
+    DocumentResponseDto updateDocumentWithFile(
+            Long documentId,
+            MultipartFile file,
+            String changeDescription,
+            Long userId);
+    void deleteDocument(Long documentId, boolean deleteAllVersions);
 }

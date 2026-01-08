@@ -6,7 +6,9 @@ import app.mobile.BK_sharing.course.Course;
 import app.mobile.BK_sharing.course.CourseRepository;
 import app.mobile.BK_sharing.document.dto.DocumentResponseDto;
 import app.mobile.BK_sharing.document.entity.Document;
+import app.mobile.BK_sharing.document.entity.DocumentVersion;
 import app.mobile.BK_sharing.document.repository.DocumentRepository;
+import app.mobile.BK_sharing.document.repository.DocumentVersionRepository;
 import app.mobile.BK_sharing.storage.SupabaseStorageService;
 import app.mobile.BK_sharing.user.User;
 import app.mobile.BK_sharing.user.UserRepository;
@@ -34,6 +36,8 @@ public class DocumentServiceImpl implements DocumentService {
     private final UserRepository userRepository; // To fetch the uploader
     private final CategoryRepository categoryRepository;
     private final CourseRepository courseRepository;
+    private final DocumentVersionRepository documentVersionRepository;
+    private final app.mobile.BK_sharing.document.service.DocumentVersionService documentVersionService;
 
     @Override
     @Transactional
@@ -42,8 +46,8 @@ public class DocumentServiceImpl implements DocumentService {
             String title,
             String description,
             Long userId,
-            List<Long> categoryIds,  // Multiple categories
-            Long courseId) {         // Single course
+            List<Long> categoryIds,
+            Long courseId) {
 
         try {
             // 1. Basic validation
@@ -70,9 +74,6 @@ public class DocumentServiceImpl implements DocumentService {
                 case "pdf" -> doc.setFileType(Document.FileType.PDF);
                 case "docx", "doc" -> doc.setFileType(Document.FileType.WORD);
                 case "pptx", "ppt" -> doc.setFileType(Document.FileType.POWERPOINT);
-//                case "xlsx", "xls" -> doc.setFileType(Document.FileType.EXCEL);
-//                case "txt" -> doc.setFileType(Document.FileType.TEXT);
-//                case "jpg", "jpeg", "png", "gif" -> doc.setFileType(Document.FileType.IMAGE);
                 default -> doc.setFileType(Document.FileType.OTHER);
             }
 
@@ -80,6 +81,7 @@ public class DocumentServiceImpl implements DocumentService {
             User uploader = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
             doc.setUploadedBy(uploader);
+            doc.setIsApproved(false); // Initially not approved
 
             // 6. Initialize collections
             doc.setCategories(new ArrayList<>());
@@ -98,14 +100,6 @@ public class DocumentServiceImpl implements DocumentService {
 
                 // Add categories to document
                 doc.getCategories().addAll(categories);
-
-                // Update reverse side if needed (optional, depends on cascade)
-                categories.forEach(category -> {
-                    if (category.getDocuments() == null) {
-                        category.setDocuments(new ArrayList<>());
-                    }
-                    category.getDocuments().add(doc);
-                });
             }
 
             // 9. Handle course (ManyToOne)
@@ -113,17 +107,20 @@ public class DocumentServiceImpl implements DocumentService {
                 Course course = courseRepository.findById(courseId)
                         .orElseThrow(() -> new RuntimeException("Course not found with ID: " + courseId));
                 doc.setCourse(course);
-
-                // Add to reverse side if needed
-                if (course.getDocuments() == null) {
-                    course.setDocuments(new ArrayList<>());
-                }
-                course.getDocuments().add(doc);
             }
 
             // 10. Save with associations
             Document savedDocument = documentRepository.save(doc);
 
+            // 11. Create initial document version
+            documentVersionService.createInitialVersion(
+                    savedDocument,
+                    uploader,
+                    publicUrl,
+                    file.getSize()
+            );
+
+            log.info("Document uploaded successfully with version 1: {}", savedDocument.getDocumentId());
             return new DocumentResponseDto(savedDocument);
 
         } catch (IOException e) {
@@ -152,50 +149,182 @@ public class DocumentServiceImpl implements DocumentService {
                 .map(DocumentResponseDto::new);
     }
 
-    @Override
     @Transactional
-    public DocumentResponseDto updateDocument(Long id, String title, String description) {
-        Document document = documentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Document not found with ID: " + id));
+    public DocumentResponseDto updateDocumentWithFile(
+            Long documentId,
+            MultipartFile file,
+            String changeDescription,
+            Long userId) {
 
+        try {
+            // 1. Get existing document
+            Document document = documentRepository.findById(documentId)
+                    .orElseThrow(() -> new RuntimeException("Document not found with ID: " + documentId));
+
+            // 2. Upload new file to Supabase
+            String newPublicUrl = storageService.uploadFile(file);
+
+            // 3. Get user who is making the update
+            User editor = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+            // 4. Update document with new file info
+            String originalFilename = file.getOriginalFilename();
+            assert originalFilename != null;
+            String fileExtension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+
+            switch (fileExtension) {
+                case "pdf" -> document.setFileType(Document.FileType.PDF);
+                case "docx", "doc" -> document.setFileType(Document.FileType.WORD);
+                case "pptx", "ppt" -> document.setFileType(Document.FileType.POWERPOINT);
+                default -> document.setFileType(Document.FileType.OTHER);
+            }
+
+            document.setFilePath(newPublicUrl);
+            document.setFileSize(file.getSize());
+
+            // Reset approval status when file is updated
+            document.setIsApproved(false);
+            document.setApprovedBy(null);
+
+            Document updatedDocument = documentRepository.save(document);
+
+            // 5. Create new document version
+            documentVersionService.createVersion(
+                    updatedDocument,
+                    editor,
+                    newPublicUrl,
+                    changeDescription != null ? changeDescription : "Document file updated",
+                    file.getSize()
+            );
+
+            log.info("Document file updated with new version for document ID: {}", documentId);
+            return new DocumentResponseDto(updatedDocument);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to update document file: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public DocumentResponseDto updateDocumentMetadata(
+            Long documentId,
+            String title,
+            String description,
+            List<Long> categoryIds,
+            Long courseId) {
+
+        // 1. Get existing document
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found with ID: " + documentId));
+
+        // 2. Update title if provided
         if (title != null && !title.trim().isEmpty()) {
             document.setTitle(title);
         }
 
+        // 3. Update description if provided
         if (description != null) {
             document.setDescription(description);
         }
 
-        Document updated = documentRepository.save(document);
-        log.info("Document updated. ID: {}", id);
+        // 4. Update categories if provided
+        if (categoryIds != null) {
+            List<Category> categories = categoryRepository.findAllById(categoryIds);
 
-        return new DocumentResponseDto(updated);
-    }
+            // Validate all categories exist
+            if (categories.size() != categoryIds.size()) {
+                throw new RuntimeException("One or more categories not found");
+            }
 
-    @Override
-    @Transactional
-    public void deleteDocument(Long id) {
-        Document document = documentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Document not found with ID: " + id));
-
-        // Delete file from Supabase storage
-        try {
-            storageService.deleteFile(document.getFilePath());
-            log.info("File deleted from Supabase: {}", document.getFilePath());
-        } catch (IOException e) {
-            log.warn("Failed to delete file from Supabase, but continuing with DB delete: {}", e.getMessage());
-            // Continue with DB deletion even if Supabase delete fails
+            // Update categories
+            document.setCategories(categories);
         }
 
+        // 5. Update course if provided
+        if (courseId != null) {
+            Course course = courseRepository.findById(courseId)
+                    .orElseThrow(() -> new RuntimeException("Course not found with ID: " + courseId));
+            document.setCourse(course);
+        } else if (courseId == null && document.getCourse() != null) {
+            // Remove course association if courseId is explicitly null
+            document.setCourse(null);
+        }
+
+        // 6. Save updated document
+        Document updatedDocument = documentRepository.save(document);
+
+        // 7. Create version entry for metadata change (optional)
+        if (document.getUploadedBy() != null) {
+            documentVersionService.createVersion(
+                    updatedDocument,
+                    document.getUploadedBy(),
+                    document.getFilePath(),
+                    "Metadata updated (title, description, categories, or course)",
+                    document.getFileSize()
+            );
+        }
+
+        log.info("Document metadata updated for document ID: {}", documentId);
+        return new DocumentResponseDto(updatedDocument);
+    }
+
+    @Transactional
+    public void deleteDocument(Long documentId, boolean deleteAllVersions) {
+        // 1. Get existing document
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found with ID: " + documentId));
+
+        // 2. Delete from storage (optional - decide based on your requirements)
+        try {
+            storageService.deleteFile(document.getFilePath());
+
+            // If deleting all versions, delete all version files too
+            if (deleteAllVersions) {
+                List<DocumentVersion> versions = documentVersionRepository
+                        .findByDocumentDocumentIdOrderByVersionNumberDesc(documentId);
+
+                for (DocumentVersion version : versions) {
+                    if (!version.getFilePath().equals(document.getFilePath())) {
+                        storageService.deleteFile(version.getFilePath());
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log.warn("Failed to delete file from storage: {}", e.getMessage());
+            // Continue with database deletion even if storage deletion fails
+        }
+
+        // 3. Delete document versions if requested
+        if (deleteAllVersions) {
+            documentVersionRepository.deleteByDocumentDocumentId(documentId);
+        }
+
+        // 4. Delete document from database
         documentRepository.delete(document);
-        log.info("Document deleted from database. ID: {}", id);
+
+        log.info("Document deleted with ID: {}, deleteAllVersions: {}", documentId, deleteAllVersions);
+    }
+
+    // Get document with versions
+    public DocumentResponseDto getDocumentWithVersions(Long documentId) {
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found with ID: " + documentId));
+
+        List<DocumentVersion> versions = documentVersionService.getVersionsByDocumentId(documentId);
+
+        DocumentResponseDto response = new DocumentResponseDto(document);
+        response.setVersions(versions);
+        response.setVersionCount(versions.size());
+
+        return response;
     }
 
     @Override
     public List<DocumentResponseDto> getDocumentsByUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-        List<Document> documents = documentRepository.findByApprovedByUserId(user.getUserId());
+        List<Document> documents = documentRepository.findByUploadedByUserId(user.getUserId());
         return documents.stream()
                 .map(DocumentResponseDto::new)
                 .collect(Collectors.toList());

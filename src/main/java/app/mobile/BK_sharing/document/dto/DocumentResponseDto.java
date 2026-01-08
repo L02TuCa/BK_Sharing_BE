@@ -1,9 +1,11 @@
 package app.mobile.BK_sharing.document.dto;
 
 import app.mobile.BK_sharing.document.entity.Document;
+import app.mobile.BK_sharing.document.entity.DocumentVersion;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class DocumentResponseDto {
@@ -16,6 +18,8 @@ public class DocumentResponseDto {
     private Long uploadedById;
     private String uploadedByUsername;
     private LocalDateTime createdAt;
+    private List<DocumentVersion> versions; // Add versions
+    private Integer versionCount;
 
     // Add constructor from Document entity
     public DocumentResponseDto(Document document) {
@@ -26,6 +30,7 @@ public class DocumentResponseDto {
         this.filePath = document.getFilePath();
         this.fileSize = document.getFileSize();
         this.createdAt = document.getCreatedAt();
+
 
         // Only get necessary user info
         if (document.getUploadedBy() != null) {

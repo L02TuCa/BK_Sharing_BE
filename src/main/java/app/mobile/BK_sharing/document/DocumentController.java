@@ -47,20 +47,20 @@ public class DocumentController {
         return ResponseEntity.ok(ApiResponse.success("Documents retrieved successfully", documents));
     }
 
-    @GetMapping("/paginated")
-    public ResponseEntity<ApiResponse<Page<DocumentResponseDto>>> getAllDocumentsPaginated(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String direction) {
-
-        Sort sort = direction.equalsIgnoreCase("ASC") ?
-                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        Page<DocumentResponseDto> documents = documentService.getAllDocuments(pageable);
-        return ResponseEntity.ok(ApiResponse.success("Documents retrieved successfully", documents));
-    }
+//    @GetMapping("/paginated")
+//    public ResponseEntity<ApiResponse<Page<DocumentResponseDto>>> getAllDocumentsPaginated(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size,
+//            @RequestParam(defaultValue = "createdAt") String sortBy,
+//            @RequestParam(defaultValue = "DESC") String direction) {
+//
+//        Sort sort = direction.equalsIgnoreCase("ASC") ?
+//                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+//        Pageable pageable = PageRequest.of(page, size, sort);
+//
+//        Page<DocumentResponseDto> documents = documentService.getAllDocuments(pageable);
+//        return ResponseEntity.ok(ApiResponse.success("Documents retrieved successfully", documents));
+//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<DocumentResponseDto>> getDocumentById(
@@ -68,6 +68,32 @@ public class DocumentController {
 
         DocumentResponseDto document = documentService.getDocumentById(id);
         return ResponseEntity.ok(ApiResponse.success("Document retrieved successfully", document));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<DocumentResponseDto>> updateDocument(
+            @PathVariable Long id,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "changeDescription", required = false) String changeDescription,
+            @RequestParam(value = "userId") Long userId,
+            @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
+            @RequestParam(value = "courseId", required = false) Long courseId) {
+
+        DocumentResponseDto updatedDocument;
+
+        if (file != null && !file.isEmpty()) {
+            // Update with new file (creates new version)
+            updatedDocument = documentService.updateDocumentWithFile(
+                    id, file, changeDescription, userId);
+        } else {
+            // Update metadata only (no new version)
+            updatedDocument = documentService.updateDocumentMetadata(
+                    id, title, description, categoryIds, courseId);
+        }
+
+        return ResponseEntity.ok(ApiResponse.success("Document updated successfully", updatedDocument));
     }
 
     @GetMapping("/user/{userId}")
@@ -90,24 +116,6 @@ public class DocumentController {
 
         List<DocumentResponseDto> documents = documentService.searchDocuments(keyword);
         return ResponseEntity.ok(ApiResponse.success("Search results retrieved successfully", documents));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<DocumentResponseDto>> updateDocument(
-            @PathVariable Long id,
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String description) {
-
-        DocumentResponseDto updatedDocument = documentService.updateDocument(id, title, description);
-        return ResponseEntity.ok(ApiResponse.success("Document updated successfully", updatedDocument));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteDocument(
-            @PathVariable Long id) {
-
-        documentService.deleteDocument(id);
-        return ResponseEntity.ok(ApiResponse.success("Document deleted successfully", null));
     }
 
     @PutMapping("/{id}/approve")
