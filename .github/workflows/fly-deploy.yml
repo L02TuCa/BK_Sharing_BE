@@ -30,6 +30,7 @@ jobs:
         if: true  # Set to true only when rotating secrets
         run: |
           flyctl secrets set \
+            SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}" \
             SPRING_DATASOURCE_URL="${{ secrets.SPRING_DATASOURCE_URL }}" \
             DB_USERNAME="${{ secrets.DB_USERNAME }}" \
             DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
